@@ -27,11 +27,9 @@
 
     /* ===== TOP BAR ===== */
     #top-bar {
-      background: var(--brand);
-      padding: 10px 14px;
+      background: var(--brand); padding: 10px 14px;
       display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0; gap: 10px;
-      transition: background 0.35s;
+      flex-shrink: 0; gap: 10px; transition: background 0.35s;
     }
     body.warning  #top-bar { background: #e8a000; }
     body.critical #top-bar { background: #000; }
@@ -58,18 +56,38 @@
     #view-search.active, #view-timetable.active, #view-countdown.active { display: flex; }
 
     /* ===== SEARCH VIEW ===== */
-    #gps-bar {
+    #search-bar {
       padding: 10px 14px; background: #f4f4f4; border-bottom: 1px solid #ddd;
-      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
     }
+    /* GPSボタン */
     #gps-btn {
-      flex: 1; padding: 13px;
+      width: 100%; padding: 13px;
       font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700;
       background: var(--brand); color: #fff;
       border: none; border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
     }
     #gps-btn:active { opacity: 0.7; }
-    #gps-status { font-size: 11px; color: #aaa; white-space: nowrap; }
+    /* テキスト検索 */
+    #search-row {
+      display: flex; gap: 8px;
+    }
+    #search-input {
+      flex: 1; padding: 11px 14px;
+      font-family: 'Noto Sans JP', sans-serif; font-size: 14px;
+      border: 2px solid #ddd; border-radius: 12px; outline: none;
+      transition: border-color 0.2s;
+    }
+    #search-input:focus { border-color: var(--brand); }
+    #search-submit {
+      padding: 11px 16px;
+      font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 700;
+      background: #555; color: #fff;
+      border: none; border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    #search-submit:active { opacity: 0.7; }
+    #search-status { font-size: 11px; color: #aaa; padding: 0 2px; }
 
     #stop-list {
       flex: 1; overflow-y: auto; padding: 12px 14px;
@@ -86,11 +104,12 @@
       background: var(--brand); border-radius: 8px;
       padding: 4px 8px; flex-shrink: 0; min-width: 56px; text-align: center;
     }
+    .stop-dist.no-gps { background: #aaa; }
     .stop-name { font-size: 16px; font-weight: 900; flex: 1; }
     .stop-arrow { font-size: 18px; color: #ccc; }
     #empty-msg {
       text-align: center; color: #aaa; font-size: 13px;
-      margin-top: 60px; line-height: 2.2;
+      margin-top: 60px; line-height: 2.4; white-space: pre-line;
     }
 
     /* ===== TIMETABLE VIEW ===== */
@@ -103,8 +122,7 @@
     body.critical #tt-header { background: #000; border-bottom-color: #333; }
     #tt-back {
       font-size: 12px; font-weight: 700; color: var(--brand);
-      background: none; border: none; cursor: pointer; padding: 0;
-      margin-bottom: 6px;
+      background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 6px;
     }
     body.warning  #tt-back { color: #333; }
     body.critical #tt-back { color: #aaa; }
@@ -126,10 +144,7 @@
       padding: 6px 12px; cursor: pointer;
       border: 2px solid transparent; transition: all 0.15s;
     }
-    .tt-time-chip.next {
-      background: var(--brand); color: #fff; border-color: var(--brand);
-      transform: scale(1.08);
-    }
+    .tt-time-chip.next { background: var(--brand); color: #fff; border-color: var(--brand); transform: scale(1.08); }
     .tt-time-chip.past { color: #ccc; background: #fafafa; }
 
     /* ===== COUNTDOWN VIEW ===== */
@@ -142,12 +157,11 @@
     body.critical #cd-header { background: #000; border-bottom-color: #333; }
     #cd-back {
       font-size: 12px; font-weight: 700; color: var(--brand);
-      background: none; border: none; cursor: pointer; padding: 0;
-      margin-bottom: 4px;
+      background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 4px;
     }
     body.warning  #cd-back { color: #333; }
     body.critical #cd-back { color: #aaa; }
-    #cd-stop-name { font-size: 15px; font-weight: 900; }
+    #cd-stop-name  { font-size: 15px; font-weight: 900; }
     #cd-route-name { font-size: 11px; color: #888; margin-top: 2px; font-weight: 700; }
     body.critical #cd-stop-name  { color: #fff; }
     body.warning  #cd-route-name { color: rgba(0,0,0,0.5); }
@@ -223,12 +237,17 @@
 
 <!-- SEARCH VIEW -->
 <div id="view-search" class="active">
-  <div id="gps-bar">
+  <div id="search-bar">
     <button id="gps-btn" onclick="searchNearby()">📍 現在地のバス停を検索</button>
-    <span id="gps-status"></span>
+    <div id="search-row">
+      <input id="search-input" type="text" placeholder="バス停名で検索（例：新宿）"
+        onkeydown="if(event.key==='Enter') searchByName()">
+      <button id="search-submit" onclick="searchByName()">検索</button>
+    </div>
+    <div id="search-status"></div>
   </div>
   <div id="stop-list">
-    <div id="empty-msg">ボタンを押して<br>近くのバス停を探します</div>
+    <div id="empty-msg">バス停名を入力するか\n現在地ボタンで検索できます</div>
   </div>
 </div>
 

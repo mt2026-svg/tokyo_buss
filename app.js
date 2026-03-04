@@ -198,9 +198,15 @@ function renderStopList(stops, hasGps) {
       ? stop.distance + t('meter')
       : t('nearStop');
     var distCls = (hasGps && stop.distance != null) ? '' : 'no-gps';
+    var routeTags = '';
+    if (stop.routes && stop.routes.length) {
+      routeTags = '<div class="stop-routes">'
+        + stop.routes.map(function(r) { return '<span class="stop-route-tag">' + escHtml(r) + '</span>'; }).join('')
+        + '</div>';
+    }
     return '<div class="stop-card" onclick="selectStop(\'' + escHtml(stop.id) + '\',\'' + escHtml(stop.name) + '\')">'
       + '<span class="stop-dist ' + distCls + '">' + distLabel + '</span>'
-      + '<span class="stop-name">' + escHtml(stop.name) + '</span>'
+      + '<div class="stop-info"><span class="stop-name">' + escHtml(stop.name) + '</span>' + routeTags + '</div>'
       + '<span class="stop-arrow">›</span>'
       + '</div>';
   }).join('');
@@ -220,7 +226,6 @@ async function selectStop(id, name) {
   document.getElementById('tt-stop-name').textContent = name;
   document.getElementById('tt-body').innerHTML =
     '<p style="text-align:center;color:#aaa;padding:40px 0">' + t('loading') + '</p>';
-  showView('view-timetable');
 
   try {
     var url  = WORKER_URL + '?mode=timetable&pole=' + encodeURIComponent(id);
@@ -228,11 +233,35 @@ async function selectStop(id, name) {
     var data = await res.json();
     parseTimetable(data);
     renderTimetable();
+    // 次便を自動検出してカウントダウン画面へ
+    var next = findNextBus();
+    if (next) {
+      showCountdown(next.ms, next.route);
+    } else {
+      showView('view-timetable');
+    }
   } catch(e) {
     document.getElementById('tt-body').innerHTML =
       '<p style="text-align:center;color:#aaa;padding:40px 0">' + t('noTimetable') + '</p>';
+    showView('view-timetable');
     console.error(e);
   }
+}
+
+function findNextBus() {
+  var now     = nowMs();
+  var closest = null;
+  currentTimetable.forEach(function(item) {
+    item.times.forEach(function(time) {
+      var ms = timeStrToMs(time);
+      if (ms > now) {
+        if (!closest || ms < closest.ms) {
+          closest = { ms: ms, route: item.route };
+        }
+      }
+    });
+  });
+  return closest;
 }
 
 function getTodayCalendar() {

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#009944">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="都営バス NAVI">
+  <title>都営バス NAVI</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --brand: #009944; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #fff; color: #111;
+      height: 100dvh; overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: background 0.35s, color 0.35s;
+    }
+    body.warning  { background: #FFD700 !important; color: #111 !important; }
+    body.critical { background: #111 !important;    color: #fff !important; }
+
+    /* ===== TOP BAR ===== */
+    #top-bar {
+      background: var(--brand);
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; gap: 10px;
+      transition: background 0.35s;
+    }
+    body.warning  #top-bar { background: #e8a000; }
+    body.critical #top-bar { background: #000; }
+    #top-title { font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 0.05em; }
+    #lang-btn {
+      font-size: 11px; font-weight: 700;
+      background: rgba(255,255,255,0.2); color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.5);
+      border-radius: 8px; padding: 5px 12px; cursor: pointer;
+    }
+
+    /* ===== ZEBRA ===== */
+    .zebra {
+      height: 0; width: 100%; overflow: hidden; flex-shrink: 0;
+      background: repeating-linear-gradient(45deg, #FFD700 0, #FFD700 20px, #000 20px, #000 40px);
+      transition: height 0.3s ease;
+    }
+    .zebra.visible { height: 24px; }
+
+    /* ===== VIEWS ===== */
+    #view-search, #view-timetable, #view-countdown {
+      flex: 1; display: none; flex-direction: column; overflow: hidden;
+    }
+    #view-search.active, #view-timetable.active, #view-countdown.active { display: flex; }
+
+    /* ===== SEARCH VIEW ===== */
+    #gps-bar {
+      padding: 10px 14px; background: #f4f4f4; border-bottom: 1px solid #ddd;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    #gps-btn {
+      flex: 1; padding: 13px;
+      font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700;
+      background: var(--brand); color: #fff;
+      border: none; border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
+    }
+    #gps-btn:active { opacity: 0.7; }
+    #gps-status { font-size: 11px; color: #aaa; white-space: nowrap; }
+
+    #stop-list {
+      flex: 1; overflow-y: auto; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .stop-card {
+      padding: 16px; border-radius: 14px; background: #f5f5f5;
+      border: 2px solid transparent; cursor: pointer;
+      display: flex; align-items: center; gap: 12px; transition: all 0.2s;
+    }
+    .stop-card:active { transform: scale(0.98); background: #ebebeb; }
+    .stop-dist {
+      font-size: 12px; font-weight: 700; color: #fff;
+      background: var(--brand); border-radius: 8px;
+      padding: 4px 8px; flex-shrink: 0; min-width: 56px; text-align: center;
+    }
+    .stop-name { font-size: 16px; font-weight: 900; flex: 1; }
+    .stop-arrow { font-size: 18px; color: #ccc; }
+    #empty-msg {
+      text-align: center; color: #aaa; font-size: 13px;
+      margin-top: 60px; line-height: 2.2;
+    }
+
+    /* ===== TIMETABLE VIEW ===== */
+    #tt-header {
+      padding: 12px 14px; background: #f4f4f4;
+      border-bottom: 1px solid #ddd; flex-shrink: 0;
+      transition: background 0.35s;
+    }
+    body.warning  #tt-header { background: #e8c200; border-bottom-color: rgba(0,0,0,0.15); }
+    body.critical #tt-header { background: #000; border-bottom-color: #333; }
+    #tt-back {
+      font-size: 12px; font-weight: 700; color: var(--brand);
+      background: none; border: none; cursor: pointer; padding: 0;
+      margin-bottom: 6px;
+    }
+    body.warning  #tt-back { color: #333; }
+    body.critical #tt-back { color: #aaa; }
+    #tt-stop-name { font-size: 17px; font-weight: 900; }
+    body.critical #tt-stop-name { color: #fff; }
+
+    #tt-body { flex: 1; overflow-y: auto; padding: 12px 14px; }
+    .tt-route-block { margin-bottom: 20px; }
+    .tt-route-label {
+      font-size: 12px; font-weight: 700; color: #fff;
+      background: var(--brand); border-radius: 6px;
+      padding: 4px 12px; display: inline-block; margin-bottom: 10px;
+    }
+    .tt-times { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tt-time-chip {
+      font-family: 'Archivo Narrow', sans-serif;
+      font-size: 14px; font-weight: 700;
+      background: #f0f0f0; border-radius: 8px;
+      padding: 6px 12px; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.15s;
+    }
+    .tt-time-chip.next {
+      background: var(--brand); color: #fff; border-color: var(--brand);
+      transform: scale(1.08);
+    }
+    .tt-time-chip.past { color: #ccc; background: #fafafa; }
+
+    /* ===== COUNTDOWN VIEW ===== */
+    #cd-header {
+      padding: 12px 14px; background: #f4f4f4;
+      border-bottom: 1px solid #ddd; flex-shrink: 0;
+      transition: background 0.35s, border-color 0.35s;
+    }
+    body.warning  #cd-header { background: #e8c200; border-bottom-color: rgba(0,0,0,0.15); }
+    body.critical #cd-header { background: #000; border-bottom-color: #333; }
+    #cd-back {
+      font-size: 12px; font-weight: 700; color: var(--brand);
+      background: none; border: none; cursor: pointer; padding: 0;
+      margin-bottom: 4px;
+    }
+    body.warning  #cd-back { color: #333; }
+    body.critical #cd-back { color: #aaa; }
+    #cd-stop-name { font-size: 15px; font-weight: 900; }
+    #cd-route-name { font-size: 11px; color: #888; margin-top: 2px; font-weight: 700; }
+    body.critical #cd-stop-name  { color: #fff; }
+    body.warning  #cd-route-name { color: rgba(0,0,0,0.5); }
+    body.critical #cd-route-name { color: #555; }
+
+    #cd-main {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px 16px; text-align: center;
+    }
+    #cd-warning-badge {
+      font-family: 'Archivo Narrow', sans-serif;
+      font-size: 15px; font-weight: 800; letter-spacing: 0.35em;
+      color: #c00; height: 20px; opacity: 0; transition: opacity 0.3s;
+    }
+    body.warning  #cd-warning-badge { opacity: 1; color: #c00; }
+    body.critical #cd-warning-badge { opacity: 1; color: #ff5555; }
+
+    #cd-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.4em; color: #aaa;
+      margin-top: 8px; margin-bottom: -4px;
+    }
+    body.warning  #cd-label { color: rgba(0,0,0,0.5); }
+    body.critical #cd-label { color: rgba(255,255,255,0.55) !important; }
+
+    #countdown {
+      display: flex; align-items: baseline; justify-content: center;
+      font-family: 'Archivo Narrow', sans-serif; font-weight: 800;
+      transform: scaleX(0.88); transform-origin: center;
+      color: var(--brand); transition: color 0.35s; line-height: 1;
+    }
+    body.warning  #countdown { color: #111; }
+    body.critical #countdown { color: #fff !important; }
+
+    #cd-min, #cd-sec { font-size: clamp(68px, 20vw, 96px); letter-spacing: -0.02em; }
+    #cd-ms  { font-size: clamp(34px, 10vw, 50px); margin-left: 2px; }
+    .cd-unit { font-size: clamp(20px, 5vw, 30px); margin: 0 2px; font-weight: 700; }
+
+    #cd-next-time {
+      font-size: 13px; font-weight: 700; color: #aaa; margin-top: 12px;
+    }
+    body.warning  #cd-next-time { color: rgba(0,0,0,0.5); }
+    body.critical #cd-next-time { color: #555; }
+
+    #cd-tt-link {
+      margin-top: 24px; padding: 12px 32px;
+      background: none; border: 2px solid var(--brand); color: var(--brand);
+      border-radius: 99px; font-family: 'Noto Sans JP', sans-serif;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    #cd-tt-link:active { background: var(--brand); color: #fff; }
+    body.warning  #cd-tt-link { border-color: #333; color: #333; }
+    body.critical #cd-tt-link { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.7); }
+
+    /* ===== AD ===== */
+    #ad-wrap {
+      flex-shrink: 0; background: #fff; border-top: 1.5px solid #eee;
+      min-height: 62px; overflow: hidden;
+      transition: background 0.35s, border-color 0.35s;
+    }
+    body.warning  #ad-wrap { background: #FFD700; border-top-color: rgba(0,0,0,0.12); }
+    body.critical #ad-wrap { background: #111; border-top-color: #2a2a2a; }
+  </style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div id="top-title">🚌 都営バス NAVI</div>
+  <button id="lang-btn" onclick="toggleLang()">EN</button>
+</div>
+
+<div id="zebra-top" class="zebra"></div>
+
+<!-- SEARCH VIEW -->
+<div id="view-search" class="active">
+  <div id="gps-bar">
+    <button id="gps-btn" onclick="searchNearby()">📍 現在地のバス停を検索</button>
+    <span id="gps-status"></span>
+  </div>
+  <div id="stop-list">
+    <div id="empty-msg">ボタンを押して<br>近くのバス停を探します</div>
+  </div>
+</div>
+
+<!-- TIMETABLE VIEW -->
+<div id="view-timetable">
+  <div id="tt-header">
+    <button id="tt-back" onclick="showSearch()">◀ もどる</button>
+    <div id="tt-stop-name">---</div>
+  </div>
+  <div id="tt-body"></div>
+</div>
+
+<!-- COUNTDOWN VIEW -->
+<div id="view-countdown">
+  <div id="cd-header">
+    <button id="cd-back" onclick="showTimetable()">◀ 時刻表へ</button>
+    <div id="cd-stop-name">---</div>
+    <div id="cd-route-name">---</div>
+  </div>
+  <div id="cd-main">
+    <div id="cd-warning-badge">W A R N I N G</div>
+    <div id="cd-label">発車まで　あと</div>
+    <div id="countdown">
+      <span id="cd-min">--</span><span class="cd-unit">分</span>
+      <span id="cd-sec">--</span><span class="cd-unit">秒</span>
+      <span id="cd-ms">--</span>
+    </div>
+    <div id="cd-next-time"></div>
+    <button id="cd-tt-link" onclick="showTimetable()">時刻表を見る</button>
+  </div>
+</div>
+
+<div id="zebra-bottom" class="zebra"></div>
+<div id="ad-wrap"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

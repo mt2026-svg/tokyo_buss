@@ -60,7 +60,6 @@
       padding: 10px 14px; background: #f4f4f4; border-bottom: 1px solid #ddd;
       display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
     }
-    /* GPSボタン */
     #gps-btn {
       width: 100%; padding: 13px;
       font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700;
@@ -68,10 +67,7 @@
       border: none; border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
     }
     #gps-btn:active { opacity: 0.7; }
-    /* テキスト検索 */
-    #search-row {
-      display: flex; gap: 8px;
-    }
+    #search-row { display: flex; gap: 8px; }
     #search-input {
       flex: 1; padding: 11px 14px;
       font-family: 'Noto Sans JP', sans-serif; font-size: 14px;
@@ -83,11 +79,10 @@
       padding: 11px 16px;
       font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 700;
       background: #555; color: #fff;
-      border: none; border-radius: 12px; cursor: pointer; transition: opacity 0.2s;
-      white-space: nowrap;
+      border: none; border-radius: 12px; cursor: pointer; white-space: nowrap;
     }
     #search-submit:active { opacity: 0.7; }
-    #search-status { font-size: 11px; color: #aaa; padding: 0 2px; }
+    #search-status { font-size: 11px; color: #aaa; padding: 0 2px; min-height: 14px; }
 
     #stop-list {
       flex: 1; overflow-y: auto; padding: 12px 14px;
@@ -98,14 +93,14 @@
       border: 2px solid transparent; cursor: pointer;
       display: flex; align-items: center; gap: 12px; transition: all 0.2s;
     }
-    .stop-card:active { transform: scale(0.98); background: #ebebeb; }
+    .stop-card:active { transform: scale(0.98); }
     .stop-dist {
       font-size: 12px; font-weight: 700; color: #fff;
       background: var(--brand); border-radius: 8px;
       padding: 4px 8px; flex-shrink: 0; min-width: 56px; text-align: center;
     }
-    .stop-dist.no-gps { background: #aaa; }
-    .stop-name { font-size: 16px; font-weight: 900; flex: 1; }
+    .stop-dist.no-gps { background: #999; }
+    .stop-name  { font-size: 16px; font-weight: 900; flex: 1; }
     .stop-arrow { font-size: 18px; color: #ccc; }
     #empty-msg {
       text-align: center; color: #aaa; font-size: 13px;
@@ -115,8 +110,7 @@
     /* ===== TIMETABLE VIEW ===== */
     #tt-header {
       padding: 12px 14px; background: #f4f4f4;
-      border-bottom: 1px solid #ddd; flex-shrink: 0;
-      transition: background 0.35s;
+      border-bottom: 1px solid #ddd; flex-shrink: 0; transition: background 0.35s;
     }
     body.warning  #tt-header { background: #e8c200; border-bottom-color: rgba(0,0,0,0.15); }
     body.critical #tt-header { background: #000; border-bottom-color: #333; }
@@ -216,9 +210,22 @@
     body.warning  #cd-tt-link { border-color: #333; color: #333; }
     body.critical #cd-tt-link { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.7); }
 
-    /* ===== AD ===== */
+    /* ===== BOTTOM AREA ===== */
+    #bottom-area {
+      flex-shrink: 0;
+      display: flex; flex-direction: column;
+      transition: background 0.35s;
+    }
+    #credit {
+      text-align: center; font-size: 9px; color: #bbb;
+      padding: 4px 12px 2px; letter-spacing: 0.02em;
+      transition: color 0.35s;
+    }
+    body.warning  #credit { color: rgba(0,0,0,0.3); }
+    body.critical #credit { color: #444; }
+
     #ad-wrap {
-      flex-shrink: 0; background: #fff; border-top: 1.5px solid #eee;
+      background: #fff; border-top: 1px solid #eee;
       min-height: 62px; overflow: hidden;
       transition: background 0.35s, border-color 0.35s;
     }
@@ -247,7 +254,7 @@
     <div id="search-status"></div>
   </div>
   <div id="stop-list">
-    <div id="empty-msg">バス停名を入力するか\n現在地ボタンで検索できます</div>
+    <div id="empty-msg">バス停名を入力するか&#10;現在地ボタンで検索できます</div>
   </div>
 </div>
 
@@ -281,7 +288,12 @@
 </div>
 
 <div id="zebra-bottom" class="zebra"></div>
-<div id="ad-wrap"></div>
+
+<div id="bottom-area">
+  <div id="credit">@MTDesignWorks / 東京都交通局・公共交通オープンデータ協議会</div>
+  <!-- 忍者AD挿入ポイント -->
+  <div id="ad-wrap"></div>
+</div>
 
 <script src="app.js"></script>
 </body>

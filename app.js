@@ -13,44 +13,44 @@ let lang = 'ja';
 
 const I18N = {
   ja: {
-    appTitle:     '🚌 都営バス NAVI',
-    langBtn:      'EN',
-    gpsBtn:       '📍 現在地のバス停を検索',
-    gpsSearching: '位置情報取得中...',
-    gpsError:     'GPS取得失敗。バス停名で検索してください',
+    appTitle:          '🚌 都営バス NAVI',
+    langBtn:           'EN',
+    gpsBtn:            '📍 現在地のバス停を検索',
+    gpsSearching:      '位置情報取得中...',
+    gpsError:          'GPS取得失敗。バス停名で検索してください',
     searchPlaceholder: 'バス停名で検索（例：新宿）',
-    searchBtn:    '検索',
-    searching:    '検索中...',
-    emptyMsg:     'バス停名を入力するか\n現在地ボタンで検索できます',
-    noStops:      '見つかりませんでした',
-    back:         'もどる',
-    ttBack:       '時刻表へ',
-    cdLabel:      '発車まで　あと',
-    cdTtLink:     '時刻表を見る',
-    loading:      '読み込み中...',
-    noTimetable:  '時刻表データがありません',
-    meter:        'm',
-    nearStop:     '付近',
+    searchBtn:         '検索',
+    searching:         '検索中...',
+    emptyMsg:          'バス停名を入力するか\n現在地ボタンで検索できます',
+    noStops:           '見つかりませんでした',
+    back:              'もどる',
+    ttBack:            '時刻表へ',
+    cdLabel:           '発車まで　あと',
+    cdTtLink:          '時刻表を見る',
+    loading:           '読み込み中...',
+    noTimetable:       '時刻表データがありません',
+    meter:             'm',
+    nearStop:          'バス停',
   },
   en: {
-    appTitle:     '🚌 Toei Bus NAVI',
-    langBtn:      '日本語',
-    gpsBtn:       '📍 Find Nearby Bus Stops',
-    gpsSearching: 'Getting location...',
-    gpsError:     'GPS failed. Try searching by name',
+    appTitle:          '🚌 Toei Bus NAVI',
+    langBtn:           '日本語',
+    gpsBtn:            '📍 Find Nearby Bus Stops',
+    gpsSearching:      'Getting location...',
+    gpsError:          'GPS failed. Try searching by name',
     searchPlaceholder: 'Search stop name (e.g. Shinjuku)',
-    searchBtn:    'Search',
-    searching:    'Searching...',
-    emptyMsg:     'Enter a stop name or\ntap the location button',
-    noStops:      'No stops found',
-    back:         'Back',
-    ttBack:       'Timetable',
-    cdLabel:      'Departing in',
-    cdTtLink:     'View Timetable',
-    loading:      'Loading...',
-    noTimetable:  'No timetable available',
-    meter:        'm',
-    nearStop:     'nearby',
+    searchBtn:         'Search',
+    searching:         'Searching...',
+    emptyMsg:          'Enter a stop name or\ntap the location button',
+    noStops:           'No stops found',
+    back:              'Back',
+    ttBack:            'Timetable',
+    cdLabel:           'Departing in',
+    cdTtLink:          'View Timetable',
+    loading:           'Loading...',
+    noTimetable:       'No timetable available',
+    meter:             'm',
+    nearStop:          'Stop',
   },
 };
 
@@ -62,15 +62,15 @@ function toggleLang() {
 }
 
 function applyLang() {
-  document.getElementById('top-title').textContent  = t('appTitle');
-  document.getElementById('lang-btn').textContent   = t('langBtn');
-  document.getElementById('gps-btn').textContent    = t('gpsBtn');
-  document.getElementById('cd-label').textContent   = t('cdLabel');
-  document.getElementById('cd-tt-link').textContent = t('cdTtLink');
-  document.getElementById('search-input').placeholder = t('searchPlaceholder');
-  document.getElementById('search-submit').textContent = t('searchBtn');
-  document.getElementById('tt-back').textContent = '◀ ' + t('back');
-  document.getElementById('cd-back').textContent = '◀ ' + t('ttBack');
+  document.getElementById('top-title').textContent         = t('appTitle');
+  document.getElementById('lang-btn').textContent          = t('langBtn');
+  document.getElementById('gps-btn').textContent           = t('gpsBtn');
+  document.getElementById('cd-label').textContent          = t('cdLabel');
+  document.getElementById('cd-tt-link').textContent        = t('cdTtLink');
+  document.getElementById('search-input').placeholder      = t('searchPlaceholder');
+  document.getElementById('search-submit').textContent     = t('searchBtn');
+  document.getElementById('tt-back').textContent           = '◀ ' + t('back');
+  document.getElementById('cd-back').textContent           = '◀ ' + t('ttBack');
   const emptyMsg = document.getElementById('empty-msg');
   if (emptyMsg) emptyMsg.textContent = t('emptyMsg');
 }
@@ -103,7 +103,7 @@ function showTimetable() { showView('view-timetable'); }
 function showCountdown(targetMs, routeName) {
   cdTargetMs  = targetMs;
   cdRouteName = routeName;
-  document.getElementById('cd-stop-name').textContent  = currentStop?.name || '';
+  document.getElementById('cd-stop-name').textContent  = currentStop ? currentStop.name : '';
   document.getElementById('cd-route-name').textContent = routeName;
   showView('view-countdown');
   if (tickTimer) clearInterval(tickTimer);
@@ -113,39 +113,41 @@ function showCountdown(targetMs, routeName) {
 // =============================================
 //  GPS検索
 // =============================================
-async function searchNearby() {
+function searchNearby() {
   const btn    = document.getElementById('gps-btn');
   const status = document.getElementById('search-status');
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = t('gpsSearching');
   status.textContent = '';
 
   if (!navigator.geolocation) {
-    status.textContent = t('gpsError');
-    btn.disabled = false;
-    btn.textContent = t('gpsBtn');
+    status.textContent  = t('gpsError');
+    btn.disabled        = false;
+    btn.textContent     = t('gpsBtn');
     return;
   }
 
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      status.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    async function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      status.textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
       try {
-        const url  = `${WORKER_URL}?mode=stops&lat=${lat}&lng=${lng}&radius=400`;
-        const res  = await fetch(url);
-        const data = await res.json();
+        var url  = WORKER_URL + '?mode=stops&lat=' + lat + '&lng=' + lng + '&radius=400';
+        var res  = await fetch(url);
+        var data = await res.json();
         renderStopList(data, true);
-      } catch (e) {
+      } catch(e) {
         renderStopList([], true);
+        console.error(e);
       }
-      btn.disabled = false;
+      btn.disabled    = false;
       btn.textContent = t('gpsBtn');
     },
-    () => {
-      status.textContent = t('gpsError');
-      btn.disabled = false;
-      btn.textContent = t('gpsBtn');
+    function() {
+      status.textContent  = t('gpsError');
+      btn.disabled        = false;
+      btn.textContent     = t('gpsBtn');
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
@@ -155,24 +157,25 @@ async function searchNearby() {
 //  バス停名検索
 // =============================================
 async function searchByName() {
-  const input  = document.getElementById('search-input');
-  const status = document.getElementById('search-status');
-  const submit = document.getElementById('search-submit');
-  const query  = input.value.trim();
+  var input  = document.getElementById('search-input');
+  var status = document.getElementById('search-status');
+  var submit = document.getElementById('search-submit');
+  var query  = input.value.trim();
   if (!query) return;
 
-  submit.disabled = true;
-  status.textContent = t('searching');
+  submit.disabled     = true;
+  status.textContent  = t('searching');
 
   try {
-    const url  = `${WORKER_URL}?mode=search&q=${encodeURIComponent(query)}`;
-    const res  = await fetch(url);
-    const data = await res.json();
+    var url  = WORKER_URL + '?mode=search&q=' + encodeURIComponent(query);
+    var res  = await fetch(url);
+    var data = await res.json();
     renderStopList(data, false);
-    status.textContent = data.length ? `${data.length}件` : t('noStops');
-  } catch (e) {
+    status.textContent = data.length ? data.length + '件' : t('noStops');
+  } catch(e) {
     status.textContent = t('noStops');
     renderStopList([], false);
+    console.error(e);
   }
   submit.disabled = false;
 }
@@ -181,121 +184,121 @@ async function searchByName() {
 //  バス停リスト描画
 // =============================================
 function renderStopList(stops, hasGps) {
-  const list = document.getElementById('stop-list');
-  // empty-msgを削除
-  const old = document.getElementById('empty-msg');
-  if (old) old.remove();
+  var list    = document.getElementById('stop-list');
+  var oldMsg  = document.getElementById('empty-msg');
+  if (oldMsg) oldMsg.remove();
 
-  if (!stops.length) {
-    list.innerHTML = `<div id="empty-msg" style="text-align:center;color:#aaa;font-size:13px;margin-top:60px;line-height:2.4;white-space:pre-line">${t('noStops')}</div>`;
+  if (!stops || !stops.length) {
+    list.innerHTML = '<div id="empty-msg" style="text-align:center;color:#aaa;font-size:13px;margin-top:60px;line-height:2.4;white-space:pre-line">' + t('noStops') + '</div>';
     return;
   }
 
-  list.innerHTML = stops.map(stop => {
-    const distLabel = hasGps && stop.distance != null
-      ? `${stop.distance}${t('meter')}`
+  list.innerHTML = stops.map(function(stop) {
+    var distLabel = (hasGps && stop.distance != null)
+      ? stop.distance + t('meter')
       : t('nearStop');
-    const distCls = hasGps && stop.distance != null ? '' : 'no-gps';
-    return `
-      <div class="stop-card" onclick="selectStop('${escHtml(stop.id)}', '${escHtml(stop.name)}')">
-        <span class="stop-dist ${distCls}">${distLabel}</span>
-        <span class="stop-name">${escHtml(stop.name)}</span>
-        <span class="stop-arrow">›</span>
-      </div>
-    `;
+    var distCls = (hasGps && stop.distance != null) ? '' : 'no-gps';
+    return '<div class="stop-card" onclick="selectStop(\'' + escHtml(stop.id) + '\',\'' + escHtml(stop.name) + '\')">'
+      + '<span class="stop-dist ' + distCls + '">' + distLabel + '</span>'
+      + '<span class="stop-name">' + escHtml(stop.name) + '</span>'
+      + '<span class="stop-arrow">›</span>'
+      + '</div>';
   }).join('');
 }
 
 function escHtml(str) {
-  return String(str).replace(/[&<>"']/g, c =>
-    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
-  );
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
 }
 
 // =============================================
 //  時刻表
 // =============================================
 async function selectStop(id, name) {
-  currentStop = { id, name };
+  currentStop = { id: id, name: name };
   document.getElementById('tt-stop-name').textContent = name;
   document.getElementById('tt-body').innerHTML =
-    `<p style="text-align:center;color:#aaa;padding:40px 0">${t('loading')}</p>`;
+    '<p style="text-align:center;color:#aaa;padding:40px 0">' + t('loading') + '</p>';
   showView('view-timetable');
 
   try {
-    const url  = `${WORKER_URL}?mode=timetable&pole=${encodeURIComponent(id)}`;
-    const res  = await fetch(url);
-    const data = await res.json();
+    var url  = WORKER_URL + '?mode=timetable&pole=' + encodeURIComponent(id);
+    var res  = await fetch(url);
+    var data = await res.json();
     parseTimetable(data);
     renderTimetable();
-  } catch (e) {
+  } catch(e) {
     document.getElementById('tt-body').innerHTML =
-      `<p style="text-align:center;color:#aaa;padding:40px 0">${t('noTimetable')}</p>`;
+      '<p style="text-align:center;color:#aaa;padding:40px 0">' + t('noTimetable') + '</p>';
+    console.error(e);
   }
 }
 
 function getTodayCalendar() {
-  const dow = new Date().getDay();
+  var dow = new Date().getDay();
   return (dow === 0 || dow === 6) ? 'SaturdayHoliday' : 'Weekday';
 }
 
 function nowMs() {
-  const n = new Date();
+  var n = new Date();
   return (n.getHours() * 3600 + n.getMinutes() * 60 + n.getSeconds()) * 1000
        + n.getMilliseconds();
 }
 
 function timeStrToMs(str) {
-  const [h, m] = str.split(':').map(Number);
-  return (h * 3600 + m * 60) * 1000;
+  var parts = str.split(':').map(Number);
+  return (parts[0] * 3600 + parts[1] * 60) * 1000;
 }
 
 function parseTimetable(data) {
-  const today  = getTodayCalendar();
-  const routes = {};
+  var today  = getTodayCalendar();
+  var routes = {};
 
-  data.forEach(entry => {
-    const calRaw = entry['odpt:calendar'] || '';
-    const cal    = calRaw.includes('Weekday') ? 'Weekday' : 'SaturdayHoliday';
+  data.forEach(function(entry) {
+    var calRaw = entry['odpt:calendar'] || '';
+    var cal    = calRaw.includes('Weekday') ? 'Weekday' : 'SaturdayHoliday';
     if (cal !== today) return;
 
-    const destRaw = entry['odpt:destinationBusstopPole'] || '';
-    const dest    = destRaw.split('.').pop() || '';
-    const routeId = (entry['odpt:busroutePattern'] || '').split('.').pop() || '不明';
-    const label   = dest || routeId;
+    var destRaw = entry['odpt:destinationBusstopPole'] || '';
+    var dest    = destRaw.split('.').pop() || '';
+    var routeId = (entry['odpt:busroutePattern'] || '').split('.').pop() || '不明';
+    var label   = dest || routeId;
 
-    const times = (entry['odpt:busstopPoleTimetableObject'] || [])
-      .map(o => o['odpt:departureTime'] || o['odpt:arrivalTime'])
+    var times = (entry['odpt:busstopPoleTimetableObject'] || [])
+      .map(function(o) { return o['odpt:departureTime'] || o['odpt:arrivalTime']; })
       .filter(Boolean).sort();
 
     if (!times.length) return;
     if (!routes[label]) routes[label] = [];
-    routes[label] = [...new Set([...routes[label], ...times])].sort();
+    routes[label] = Array.from(new Set(routes[label].concat(times))).sort();
   });
 
-  currentTimetable = Object.entries(routes).map(([route, times]) => ({ route, times }));
+  currentTimetable = Object.keys(routes).map(function(route) {
+    return { route: route, times: routes[route] };
+  });
 }
 
 function renderTimetable() {
-  const body = document.getElementById('tt-body');
+  var body = document.getElementById('tt-body');
   if (!currentTimetable.length) {
-    body.innerHTML = `<p style="text-align:center;color:#aaa;padding:40px 0">${t('noTimetable')}</p>`;
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px 0">' + t('noTimetable') + '</p>';
     return;
   }
-  const now = nowMs();
-  body.innerHTML = currentTimetable.map(({ route, times }) => {
-    const nextIdx = times.findIndex(t => timeStrToMs(t) > now);
-    const chips = times.map((time, i) => {
-      const ms  = timeStrToMs(time);
-      const cls = i === nextIdx ? 'next' : ms <= now ? 'past' : '';
-      return `<div class="tt-time-chip ${cls}" onclick="onChipClick('${time}','${escHtml(route)}')">${time}</div>`;
+  var now = nowMs();
+  body.innerHTML = currentTimetable.map(function(item) {
+    var route   = item.route;
+    var times   = item.times;
+    var nextIdx = times.findIndex(function(tm) { return timeStrToMs(tm) > now; });
+    var chips   = times.map(function(time, i) {
+      var ms  = timeStrToMs(time);
+      var cls = (i === nextIdx) ? 'next' : (ms <= now ? 'past' : '');
+      return '<div class="tt-time-chip ' + cls + '" onclick="onChipClick(\'' + time + '\',\'' + escHtml(route) + '\')">' + time + '</div>';
     }).join('');
-    return `
-      <div class="tt-route-block">
-        <div class="tt-route-label">${escHtml(route)}</div>
-        <div class="tt-times">${chips}</div>
-      </div>
-    `;
+    return '<div class="tt-route-block">'
+      + '<div class="tt-route-label">' + escHtml(route) + '</div>'
+      + '<div class="tt-times">' + chips + '</div>'
+      + '</div>';
   }).join('');
 }
 
@@ -308,27 +311,27 @@ function onChipClick(timeStr, routeName) {
 // =============================================
 function tick() {
   if (cdTargetMs === null) return;
-  const now = nowMs();
-  let diff  = cdTargetMs - now;
+  var now  = nowMs();
+  var diff = cdTargetMs - now;
   if (diff < -60000) diff += 86400000;
   diff = Math.max(0, diff);
 
-  const m  = Math.floor(diff / 60000);
-  const s  = Math.floor((diff % 60000) / 1000);
-  const ms = Math.floor((diff % 1000) / 10);
+  var m  = Math.floor(diff / 60000);
+  var s  = Math.floor((diff % 60000) / 1000);
+  var ms = Math.floor((diff % 1000) / 10);
 
-  const elMin = document.getElementById('cd-min');
-  const elSec = document.getElementById('cd-sec');
-  const elMs  = document.getElementById('cd-ms');
+  var elMin = document.getElementById('cd-min');
+  var elSec = document.getElementById('cd-sec');
+  var elMs  = document.getElementById('cd-ms');
   if (elMin) elMin.textContent = String(m).padStart(2,'0');
   if (elSec) elSec.textContent = String(s).padStart(2,'0');
   if (elMs)  elMs.textContent  = String(ms).padStart(2,'0');
 
-  const h    = Math.floor(cdTargetMs / 3600000) % 24;
-  const min2 = Math.floor((cdTargetMs % 3600000) / 60000);
-  const elNext = document.getElementById('cd-next-time');
+  var h    = Math.floor(cdTargetMs / 3600000) % 24;
+  var min2 = Math.floor((cdTargetMs % 3600000) / 60000);
+  var elNext = document.getElementById('cd-next-time');
   if (elNext) elNext.textContent =
-    `${String(h).padStart(2,'0')}:${String(min2).padStart(2,'0')} 発`;
+    String(h).padStart(2,'0') + ':' + String(min2).padStart(2,'0') + ' 発';
 
   updateAlertState(diff);
 }
@@ -337,9 +340,9 @@ function tick() {
 //  ALERT STATE
 // =============================================
 function updateAlertState(diffMs) {
-  const body = document.body;
-  const zt   = document.getElementById('zebra-top');
-  const zb   = document.getElementById('zebra-bottom');
+  var body = document.body;
+  var zt   = document.getElementById('zebra-top');
+  var zb   = document.getElementById('zebra-bottom');
   if (!zt || !zb) return;
   body.classList.remove('warning','critical');
   zt.classList.remove('visible');
@@ -355,8 +358,8 @@ function updateAlertState(diffMs) {
 
 function clearAlert() {
   document.body.classList.remove('warning','critical');
-  const zt = document.getElementById('zebra-top');
-  const zb = document.getElementById('zebra-bottom');
+  var zt = document.getElementById('zebra-top');
+  var zb = document.getElementById('zebra-bottom');
   if (zt) zt.classList.remove('visible');
   if (zb) zb.classList.remove('visible');
 }

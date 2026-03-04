@@ -251,40 +251,41 @@ function timeStrToMs(str) {
   return (parts[0] * 3600 + parts[1] * 60) * 1000;
 }
 
+function addEntry(entry, routes) {
+  var objects  = entry['odpt:busstopPoleTimetableObject'] || [];
+  var destSign = objects.length > 0 ? (objects[0]['odpt:destinationSign'] || '') : '';
+  var destRaw  = entry['odpt:destinationBusstopPole'] || '';
+  var dest     = destRaw.split('.').pop() || '';
+  var label    = destSign || dest || (entry['odpt:busroute'] || '').split('.').pop() || '不明';
+  var times = objects
+    .map(function(o) { return o['odpt:departureTime'] || o['odpt:arrivalTime']; })
+    .filter(Boolean).sort();
+  if (!times.length) return;
+  if (!routes[label]) routes[label] = [];
+  routes[label] = Array.from(new Set(routes[label].concat(times))).sort();
+}
+
 function parseTimetable(data) {
-  var isWeekday = (new Date().getDay() !== 0 && new Date().getDay() !== 6);
+  var dow = new Date().getDay();
+  var isWeekday = (dow !== 0 && dow !== 6);
   var routes = {};
 
+  // パス1: 今日の曜日に合うエントリのみ
   data.forEach(function(entry) {
-    // dc:title か odpt:note に「平日」「休日」が含まれる
-    var title = (entry['dc:title'] || '') + (entry['odpt:note'] || '');
-    var isEntryWeekday = title.includes('平日');
-    var isEntryHoliday = title.includes('休日');
-
-    // どちらも含まない場合はすべて通す（フォールバック）
-    if (isEntryWeekday || isEntryHoliday) {
-      if (isWeekday && !isEntryWeekday) return;
-      if (!isWeekday && !isEntryHoliday) return;
+    var title      = (entry['dc:title'] || '') + (entry['odpt:note'] || '');
+    var hasWeekday = title.includes('\u5e73\u65e5'); // 平日
+    var hasHoliday = title.includes('\u4f11\u65e5'); // 休日
+    if (hasWeekday || hasHoliday) {
+      if (isWeekday  && !hasWeekday) return;
+      if (!isWeekday && !hasHoliday) return;
     }
-
-    // 行先（destinationSign が最も人間に読みやすい）
-    var objects = entry['odpt:busstopPoleTimetableObject'] || [];
-    var destSign = '';
-    if (objects.length > 0) {
-      destSign = objects[0]['odpt:destinationSign'] || '';
-    }
-    var destRaw = entry['odpt:destinationBusstopPole'] || '';
-    var dest    = destRaw.split('.').pop() || '';
-    var label   = destSign || dest || (entry['odpt:busroute'] || '').split('.').pop() || '不明';
-
-    var times = objects
-      .map(function(o) { return o['odpt:departureTime'] || o['odpt:arrivalTime']; })
-      .filter(Boolean).sort();
-
-    if (!times.length) return;
-    if (!routes[label]) routes[label] = [];
-    routes[label] = Array.from(new Set(routes[label].concat(times))).sort();
+    addEntry(entry, routes);
   });
+
+  // パス2: パス1で空なら全エントリを通す
+  if (Object.keys(routes).length === 0) {
+    data.forEach(function(entry) { addEntry(entry, routes); });
+  }
 
   currentTimetable = Object.keys(routes).map(function(route) {
     return { route: route, times: routes[route] };

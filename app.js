@@ -7,6 +7,46 @@ const WARN_MS     = 3 * 60 * 1000;
 const CRITICAL_MS = 1 * 60 * 1000;
 
 // =============================================
+//  路線ID → 日本語名変換
+// =============================================
+const ROUTE_NAME_MAP = {
+  // 白
+  'Shiro61':'白６１', 'Shiro62':'白６２',
+  // 宿
+  'Shuku74':'宿７４', 'Shuku75':'宿７５', 'Shuku91':'宿９１',
+  // 早
+  'Haya77':'早７７',
+  // 王
+  'Ou78':'王７８',
+  // 品
+  'Shina97':'品９７', 'Shina98':'品９８', 'Shina99':'品９９',
+  // 千（環状）
+  'CH01':'千０１',
+  // 東
+  'Higashi40':'東４０', 'Higashi41':'東４１',
+  // 渋
+  'Shibu88':'渋８８',
+  // 池
+  'Ike86':'池８６', 'Ike87':'池８７',
+  // 橋
+  'Hashi63':'橋６３',
+  // 錦
+  'Nishi10':'錦１０',
+  // 都
+  'To01':'都０１',
+  // 急
+  'Kyu98':'急９８',
+  // 梅
+  'Ume70':'梅７０',
+};
+
+function toRouteLabel(id) {
+  if (ROUTE_NAME_MAP[id]) return ROUTE_NAME_MAP[id];
+  // フォールバック：英字プレフィクスを除いて数字だけ残す
+  return id;
+}
+
+// =============================================
 //  多言語
 // =============================================
 let lang = 'ja';
@@ -27,6 +67,7 @@ const I18N = {
     ttBack:            '時刻表へ',
     cdLabel:           '発車まで　あと',
     cdTtLink:          '時刻表を見る',
+    firstBusLabel:     '始発まで　あと',
     loading:           '読み込み中...',
     noTimetable:       '時刻表データがありません',
     meter:             'm',
@@ -47,6 +88,7 @@ const I18N = {
     ttBack:            'Timetable',
     cdLabel:           'Departing in',
     cdTtLink:          'View Timetable',
+    firstBusLabel:     'Until First Bus',
     loading:           'Loading...',
     noTimetable:       'No timetable available',
     meter:             'm',
@@ -100,11 +142,19 @@ function showView(id) {
 function showSearch()    { showView('view-search'); }
 function showTimetable() { showView('view-timetable'); }
 
-function showCountdown(targetMs, routeName) {
-  cdTargetMs  = targetMs;
-  cdRouteName = routeName;
+var cdIsFirstBus = false;
+
+function showCountdown(targetMs, routeName, isFirstBus) {
+  cdTargetMs   = targetMs;
+  cdRouteName  = routeName;
+  cdIsFirstBus = !!isFirstBus;
   document.getElementById('cd-stop-name').textContent  = currentStop ? currentStop.name : '';
   document.getElementById('cd-route-name').textContent = routeName;
+  // 運行終了モードの初期表示
+  var endEl = document.getElementById('cd-service-end');
+  if (endEl) endEl.style.display = cdIsFirstBus ? '' : 'none';
+  var labelEl = document.getElementById('cd-label');
+  if (labelEl) labelEl.textContent = cdIsFirstBus ? t('firstBusLabel') : t('cdLabel');
   showView('view-countdown');
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(tick, 16);
@@ -201,7 +251,7 @@ function renderStopList(stops, hasGps) {
     var routeTags = '';
     if (stop.routes && stop.routes.length) {
       routeTags = '<div class="stop-routes">'
-        + stop.routes.map(function(r) { return '<span class="stop-route-tag">' + escHtml(r) + '</span>'; }).join('')
+        + stop.routes.map(function(r) { return '<span class="stop-route-tag">' + escHtml(toRouteLabel(r)) + '</span>'; }).join('')
         + '</div>';
     }
     return '<div class="stop-card" onclick="selectStop(\'' + escHtml(stop.id) + '\',\'' + escHtml(stop.name) + '\')">'
@@ -234,9 +284,9 @@ async function selectStop(id, name) {
     parseTimetable(data);
     renderTimetable();
     // 次便を自動検出してカウントダウン画面へ
-    var next = findNextBus();
-    if (next) {
-      showCountdown(next.ms, next.route);
+    var result = findNextBus();
+    if (result) {
+      showCountdown(result.bus.ms, result.bus.route, result.isFirstBus);
     } else {
       showView('view-timetable');
     }
@@ -250,18 +300,23 @@ async function selectStop(id, name) {
 
 function findNextBus() {
   var now     = nowMs();
-  var closest = null;
+  var closest = null;   // 今日の次便
+  var first   = null;   // 今日の始発（翌朝表示用）
+
   currentTimetable.forEach(function(item) {
     item.times.forEach(function(time) {
       var ms = timeStrToMs(time);
       if (ms > now) {
-        if (!closest || ms < closest.ms) {
-          closest = { ms: ms, route: item.route };
-        }
+        if (!closest || ms < closest.ms) closest = { ms: ms, route: item.route };
       }
+      // 始発 = 一番早い時刻
+      if (!first || ms < first.ms) first = { ms: ms, route: item.route };
     });
   });
-  return closest;
+
+  if (closest) return { bus: closest, isFirstBus: false };
+  if (first)   return { bus: first,   isFirstBus: true  };
+  return null;
 }
 
 function getTodayCalendar() {
@@ -345,7 +400,7 @@ function renderTimetable() {
 }
 
 function onChipClick(timeStr, routeName) {
-  showCountdown(timeStrToMs(timeStr), routeName);
+  showCountdown(timeStrToMs(timeStr), routeName, false);
 }
 
 // =============================================
@@ -355,27 +410,51 @@ function tick() {
   if (cdTargetMs === null) return;
   var now  = nowMs();
   var diff = cdTargetMs - now;
-  if (diff < -60000) diff += 86400000;
+
+  if (cdIsFirstBus && diff < 0) diff += 86400000;
+  if (!cdIsFirstBus && diff < -60000) diff += 86400000;
   diff = Math.max(0, diff);
 
-  var m  = Math.floor(diff / 60000);
-  var s  = Math.floor((diff % 60000) / 1000);
-  var ms = Math.floor((diff % 1000) / 10);
-
-  var elMin = document.getElementById('cd-min');
-  var elSec = document.getElementById('cd-sec');
-  var elMs  = document.getElementById('cd-ms');
-  if (elMin) elMin.textContent = String(m).padStart(2,'0');
-  if (elSec) elSec.textContent = String(s).padStart(2,'0');
-  if (elMs)  elMs.textContent  = String(ms).padStart(2,'0');
-
-  var h    = Math.floor(cdTargetMs / 3600000) % 24;
-  var min2 = Math.floor((cdTargetMs % 3600000) / 60000);
+  var elMin  = document.getElementById('cd-min');
+  var elSec  = document.getElementById('cd-sec');
+  var elMs   = document.getElementById('cd-ms');
+  var elCnt  = document.getElementById('countdown');
   var elNext = document.getElementById('cd-next-time');
-  if (elNext) elNext.textContent =
-    String(h).padStart(2,'0') + ':' + String(min2).padStart(2,'0') + ' 発';
+  var units  = elCnt ? elCnt.querySelectorAll('.cd-unit') : [];
 
-  updateAlertState(diff);
+  if (diff >= 3600000) {
+    // 1時間以上 → H時間MM分
+    var h   = Math.floor(diff / 3600000);
+    var min = Math.floor((diff % 3600000) / 60000);
+    if (elMin) elMin.textContent = String(h);
+    if (elSec) elSec.textContent = String(min).padStart(2, '0');
+    if (elMs)  { elMs.textContent = ''; elMs.style.display = 'none'; }
+    if (units[0]) units[0].textContent = '時間';
+    if (units[1]) units[1].textContent = '分';
+    if (units[2]) units[2].style.display = 'none';
+  } else {
+    // 1時間未満 → MM分SS秒MS
+    var m  = Math.floor(diff / 60000);
+    var s  = Math.floor((diff % 60000) / 1000);
+    var ms = Math.floor((diff % 1000) / 10);
+    if (elMin) elMin.textContent = String(m).padStart(2,'0');
+    if (elSec) elSec.textContent = String(s).padStart(2,'0');
+    if (elMs)  { elMs.textContent = String(ms).padStart(2,'0'); elMs.style.display = ''; }
+    if (units[0]) units[0].textContent = '分';
+    if (units[1]) units[1].textContent = '秒';
+    if (units[2]) units[2].style.display = '';
+  }
+
+  var h2   = Math.floor(cdTargetMs / 3600000) % 24;
+  var min2 = Math.floor((cdTargetMs % 3600000) / 60000);
+  if (elNext) elNext.textContent =
+    String(h2).padStart(2,'0') + ':' + String(min2).padStart(2,'0') + (cdIsFirstBus ? ' 始発' : ' 発');
+
+  if (cdIsFirstBus) {
+    clearAlert();
+  } else {
+    updateAlertState(diff);
+  }
 }
 
 // =============================================

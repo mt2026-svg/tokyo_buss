@@ -166,6 +166,8 @@
     body.critical #cd-stop-name  { color: #fff; }
     body.warning  #cd-route-name { color: rgba(0,0,0,0.5); }
     body.critical #cd-route-name { color: #555; }
+    body.critical #cd-service-end { color: #ff5555; }
+    body.warning  #cd-service-end { color: #c00; }
 
     #cd-main {
       flex: 1; display: flex; flex-direction: column;
@@ -287,6 +289,7 @@
   </div>
   <div id="cd-main">
     <div id="cd-warning-badge">W A R N I N G</div>
+    <div id="cd-service-end" style="display:none;font-size:13px;font-weight:700;color:#c00;letter-spacing:0.05em;margin-bottom:4px">本日の運行は終了しました</div>
     <div id="cd-label">発車まで　あと</div>
     <div id="countdown">
       <span id="cd-min">--</span><span class="cd-unit">分</span>
@@ -302,12 +305,19 @@
 
 <div id="bottom-area">
   <div id="credit">@MTDesignWorks / 東京都交通局・公共交通オープンデータ協議会</div>
-  <!-- admax -->
-<script src="https://adm.shinobi.jp/s/5de26feedb8c1091c34d91747db43c60"></script>
-<!-- admax -->
+  <!-- 忍者AD挿入ポイント -->
   <div id="ad-wrap"></div>
 </div>
 
 <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/tokyo_buss/sw.js')
+          .then(function(reg) { console.log('SW registered:', reg.scope); })
+          .catch(function(err) { console.log('SW error:', err); });
+      });
+    }
+  </script>
 </body>
 </html>

@@ -1,12 +1,33 @@
 {
+  "id": "https://mt2026-svg.github.io/tokyo_buss/",
   "name": "都営バス NAVI",
   "short_name": "バスNAVI",
+  "description": "都営バスの次の便をリアルタイムで検索・カウントダウン表示するアプリ。GPS検索とバス停名検索に対応。",
   "start_url": "/tokyo_buss/",
+  "scope": "/tokyo_buss/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#009944",
+  "lang": "ja",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "バス停検索画面"
+    },
+    {
+      "src": "screenshot-2.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "カウントダウン画面"
+    }
   ]
 }

@@ -218,17 +218,19 @@
 
     /* ===== BOTTOM AREA ===== */
     #bottom-area {
-      flex-shrink: 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
       display: flex; flex-direction: column;
       transition: background 0.35s;
+      z-index: 100;
     }
     #credit {
       text-align: center; font-size: 9px; color: #bbb;
       padding: 4px 12px 2px; letter-spacing: 0.02em;
-      transition: color 0.35s;
+      background: #fff;
+      transition: color 0.35s, background 0.35s;
     }
-    body.warning  #credit { color: rgba(0,0,0,0.3); }
-    body.critical #credit { color: #444; }
+    body.warning  #credit { color: rgba(0,0,0,0.3); background: #FFD700; }
+    body.critical #credit { color: #444; background: #111; }
 
     #ad-wrap {
       background: #fff; border-top: 1px solid #eee;
@@ -237,6 +239,9 @@
     }
     body.warning  #ad-wrap { background: #FFD700; border-top-color: rgba(0,0,0,0.12); }
     body.critical #ad-wrap { background: #111; border-top-color: #2a2a2a; }
+
+    /* bottom-areaの高さ分だけ各viewにpadding-bottomを確保 */
+    #view-search, #view-timetable, #view-countdown { padding-bottom: 80px; }
   </style>
 </head>
 <body>
@@ -297,9 +302,7 @@
 
 <div id="bottom-area">
   <div id="credit">@MTDesignWorks / 東京都交通局・公共交通オープンデータ協議会</div>
-  <!-- admax -->
-<script src="https://adm.shinobi.jp/s/5de26feedb8c1091c34d91747db43c60"></script>
-<!-- admax -->
+  <!-- 忍者AD挿入ポイント -->
   <div id="ad-wrap"></div>
 </div>
 

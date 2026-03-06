@@ -29,5 +29,12 @@
       "form_factor": "narrow",
       "label": "カウントダウン画面"
     }
-  ]
+    {
+      "src": "screenshot-3.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "3分前のWARNING表示"
+    }
+    ]
 }
